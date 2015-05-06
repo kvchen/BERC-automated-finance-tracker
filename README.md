@@ -22,6 +22,11 @@ version >= 3.4, or any Python version >= 3.0 with Pip installed.
 The program can be started from `run.pyw` in the main folder. Upon starting the program, a window should pop up showing three options - "Update," "Backup," and "Exit." Select the correct one and let the program do its thing!
 
 
+## FAQ
+
+* I see duplicate entries in the Payables tab. How do I get rid of them?
+    * To fix this, you need to find the difference between the two entries (the difference might be small). Make sure the entry in the Google reimbursement form matches up exactly with that in the Excel spreadsheet.
+
 ### Modification
 
 This project is created and maintained by [Kevin Chen](https://github.com/kvchen). If modification is necessary, please get in touch with the current maintainer.
