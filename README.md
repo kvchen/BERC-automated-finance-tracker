@@ -24,7 +24,7 @@ The program can be started from `run.pyw` in the main folder. Upon starting the 
 
 ### Modification
 
-This project was created by [Kevin Chen](https://github.com/kvchen), and is currently being maintained by [Kevin Chen](https://github.com/kvchen). If modification is necessary, please get in touch with the current maintainer.
+This project is created and maintained by [Kevin Chen](https://github.com/kvchen). If modification is necessary, please get in touch with the current maintainer.
 
 This code is free and open source under the [MIT license](https://raw.githubusercontent.com/kvchen/BERC-automated-finance-tracker/master/LICENSE).
 
