@@ -25,23 +25,8 @@ import logging
 
 from logging.handlers import TimedRotatingFileHandler
 
-
-# Log to (up to) three places - GUI, logfile, and (optionally) console output
-
 LOG_FILENAME = 'logs/bercaft.log'
 LOG_FORMAT = '%(asctime)s - %(levelname)s - %(module)s - %(message)s'
-
-# Uncomment this line to log output to terminal
-# logging.basicConfig(format=LOG_FORMAT)
-
-formatter = logging.Formatter(LOG_FORMAT)
-
-logger = logging.getLogger('root')
-logger.setLevel(logging.INFO)
-
-handler = TimedRotatingFileHandler(LOG_FILENAME, when='M')
-handler.setFormatter(formatter)
-logger.addHandler(handler)
 
 
 def main():
@@ -56,20 +41,39 @@ def main():
     
     args = parser.parse_args()
 
+    # Log to (up to) three places - GUI, logfile, and console output
+
+    # Uncomment this line to log output to terminal
+    # logging.basicConfig(format=LOG_FORMAT)
+
+    formatter = logging.Formatter(LOG_FORMAT)
+    logger = logging.getLogger('root')
+    logger.setLevel(logging.INFO)
+
+    handler = TimedRotatingFileHandler(LOG_FILENAME, when='M')
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+
     if args.debug:
         logger.setLevel(logging.DEBUG)
         logger.debug("Debugging output enabled")
 
     dispatch = Dispatch('config.yml')
 
-    if args.backup:
-        dispatch.backup()
-    elif args.update:
-        dispatch.update()
-    else:
-        gui = DispatchGUI(dispatch)
-        gui.mainloop()
-
+    try:
+        if args.backup:
+            dispatch.backup()
+        elif args.update:
+            dispatch.update()
+        else:
+            gui = DispatchGUI(dispatch)
+            gui.mainloop()
+            logger.removeHandler(gui.console_handler)
+    except Exception as e:
+        logger.info("Fatal error encountered!")
+    finally:
+        logger.info("Cleaning up...")
+        dispatch.cleanup()
 
 if __name__ == "__main__":
     main()

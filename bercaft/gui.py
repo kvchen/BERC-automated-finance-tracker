@@ -53,8 +53,8 @@ class DispatchGUI(tk.Tk):
         console_font = tkinter.font.Font(family="Courier", size=10)
         console = tk.Text(frame, bg='#333', fg='white', bd=1, font=console_font, 
             height=8, width=60)
-        console_handler = WidgetLogger(console)
-        logger.addHandler(console_handler)
+        self.console_handler = WidgetLogger(console)
+        logger.addHandler(self.console_handler)
 
         # Add frames to grid
         frame.grid(column=0, row=0)
