@@ -17,9 +17,6 @@ class DispatchGUI(tk.Tk):
         tk.Tk.__init__(self)
 
         self.dispatch = dispatch
-        self.edit_lock = Lock()
-        self.current_process = None
-
         self.wm_protocol("WM_DELETE_WINDOW", self.destroy)
 
         # Initialize the main window
@@ -81,11 +78,10 @@ class DispatchGUI(tk.Tk):
 
     def backup(self):
         def backup_callback():
-            self.edit_lock.release()
             tk.messagebox.showinfo("Backup",
                 "Backup created successfully!")
 
-        if self.edit_lock.acquire(blocking=False):
+        if self.dispatch.edit_lock.acquire(blocking=False):
             logger.debug("Creating backup thread")
 
             t = Thread(target=self.dispatch.backup, daemon=True, 
@@ -100,11 +96,10 @@ class DispatchGUI(tk.Tk):
 
     def update(self):
         def update_callback():
-            self.edit_lock.release()
             tk.messagebox.showinfo("Update",
                 "Update completed successfully!")
 
-        if self.edit_lock.acquire(blocking=False):
+        if self.dispatch.edit_lock.acquire(blocking=False):
             logger.debug("Creating update thread")
 
             t = Thread(target=self.dispatch.update, daemon=True, 
@@ -118,14 +113,14 @@ class DispatchGUI(tk.Tk):
 
 
     def exit(self):
-        if not self.edit_lock.acquire(blocking=False):
+        if not self.dispatch.edit_lock.acquire(blocking=False):
             if not tk.messagebox.askyesno("Exit", 
                 "The spreadsheet is currently being modified.\n"
                 "Quitting now may leave it in an inconsistent state.\n"
                 "Are you sure you wish to exit?"):
                 return
 
-        self.edit_lock.release()
+        self.dispatch.edit_lock.release()
         self.destroy()
 
 

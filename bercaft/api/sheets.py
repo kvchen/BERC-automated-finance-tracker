@@ -1,6 +1,7 @@
 import gspread
 
 from .models import Payable
+from .constants import *
 
 
 class SheetsAPI(object):
@@ -19,9 +20,10 @@ class SheetsAPI(object):
         for row in self.sheet.get_all_values()[1:]:
             row = row[:15]
             if len(row) < 15:
-                row += [None] * range(len(Payable._fields)-len(row))
+                row.extend([None] * range(len(Payable._fields)-len(row)))
 
-            payables.append(Payable(*row))
+            row_values = dict(zip(PAYABLE_FIELDS, row))
+            payables.append(Payable(**row_values))
 
         return payables
 

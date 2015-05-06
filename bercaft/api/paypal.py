@@ -5,10 +5,10 @@ from dateutil import parser
 from urllib.parse import parse_qs
 
 import logging
-from pytz import timezone
 import requests
 
 from .models import Transaction
+from .constants import *
 
 
 logger = logging.getLogger('root')
@@ -51,20 +51,6 @@ class PayPalAPI(object):
         with most recent first) and returns them as a chronologically-sorted
         array.
         """
-        transaction_responses = {
-            'L_STATUS': 'status', 
-            'L_TYPE': 'type', 
-            'L_TIMEZONE': 'timezone', 
-            'L_TIMESTAMP': 'timestamp', 
-            'L_TRANSACTIONID': 'id', 
-            'L_NAME': 'name', 
-            'L_EMAIL': 'email', 
-            'L_AMT': 'amount', 
-            'L_FEEAMT': 'fee_amount', 
-            'L_NETAMT': 'net_amount', 
-            'L_CURRENCYCODE': 'currency'
-        }
-
         transactions = []
 
         while start_date < end_date:
@@ -83,7 +69,7 @@ class PayPalAPI(object):
             while 'L_STATUS{0}'.format(idx) in response:
                 fields = {}
 
-                for rf, tf in transaction_responses.items():
+                for rf, tf in TRANSACTION_RESPONSE_KEYS.items():
                     field_name = '{0}{1}'.format(rf, idx)
 
                     if field_name in response:
@@ -91,18 +77,15 @@ class PayPalAPI(object):
                     else:
                         fields[tf] = None
 
-                # Format the timestamp field as a datetime object
-                fields['timestamp'] = parser.parse(fields['timestamp'])
-
                 new_transaction = Transaction(**fields)
                 transactions.append(new_transaction)
                 idx += 1
 
-            next_end_date = transactions[-1].timestamp
+            next_end_date = transactions[-1].data['timestamp']
             if next_end_date == end_date:
                 break
 
-            logger.info("Retrieved transaction history from {} to {}"
+            logger.info("Got transactions from {:%m/%d} to {:%m/%d}"
                 .format(next_end_date, end_date))
             end_date = next_end_date
 

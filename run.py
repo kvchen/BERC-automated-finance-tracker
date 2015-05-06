@@ -44,13 +44,13 @@ def main():
     # Log to (up to) three places - GUI, logfile, and console output
 
     # Uncomment this line to log output to terminal
-    # logging.basicConfig(format=LOG_FORMAT)
+    logging.basicConfig(format=LOG_FORMAT)
 
     formatter = logging.Formatter(LOG_FORMAT)
     logger = logging.getLogger('root')
     logger.setLevel(logging.INFO)
 
-    handler = TimedRotatingFileHandler(LOG_FILENAME, when='M')
+    handler = TimedRotatingFileHandler(LOG_FILENAME, when='H')
     handler.setFormatter(formatter)
     logger.addHandler(handler)
 
@@ -58,9 +58,9 @@ def main():
         logger.setLevel(logging.DEBUG)
         logger.debug("Debugging output enabled")
 
-    dispatch = Dispatch('config.yml')
-
     try:
+        dispatch = Dispatch('config.yml')
+        
         if args.backup:
             dispatch.backup()
         elif args.update:
@@ -73,7 +73,7 @@ def main():
         logger.info("Fatal error encountered!")
     finally:
         logger.info("Cleaning up...")
-        dispatch.cleanup()
+
 
 if __name__ == "__main__":
     main()
