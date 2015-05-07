@@ -25,7 +25,7 @@ The program can be started from `run.pyw` in the main folder. Upon starting the 
 ## FAQ
 
 * I see duplicate entries in the Payables tab. How do I get rid of them?
-    * To fix this, you need to find the difference between the two entries (the difference might be small). Make sure the entry in the Google reimbursement form matches up exactly with that in the Excel spreadsheet.
+    * To fix this, you need to find the difference between the two entries (the difference might be small). You'll need to change the entry in the Google reimbursement form to match up exactly with the original entry in the Excel spreadsheet.
 
 ### Modification
 

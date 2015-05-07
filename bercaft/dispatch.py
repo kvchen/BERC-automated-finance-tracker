@@ -12,11 +12,15 @@ from threading import Lock
 from .api.paypal import PayPalAPI
 from .api.sheets import SheetsAPI
 from .api.excel import ExcelAPI
+from .api.constants import *
 
 logger = logging.getLogger('root')
 
 
 class Dispatch(object):
+    """This object takes care of the actual updating for everything in the 
+    spreadsheet.
+    """
     def __init__(self, config_file):
         self.load_config(config_file)
         self.edit_lock = Lock()
@@ -36,6 +40,7 @@ class Dispatch(object):
 
     
     def load_config(self, config_file):
+        """Loads the configuration file provided in the init."""
         try:
             with open(config_file, 'r') as infile:
                 self.config = yaml.load(infile)
@@ -56,15 +61,14 @@ class Dispatch(object):
             logger.info("Opening Excel workbook for editing")
             self.excel = ExcelAPI(**self.config['excel'])
             
-
-            # logger.info("Fetching latest transactions from Paypal...")
-            # transactions = self.get_transactions()
-            # logger.info("Found transaction info for:\n* {} payables\n"
-            #     "* {} receivables\n* {} transfers\n* {} other".format(
-            #         len(transactions['payables']), 
-            #         len(transactions['receivables']), 
-            #         len(transactions['transfers']), 
-            #         len(transactions['other'])))
+            logger.info("Fetching latest transactions from Paypal...")
+            transactions = self.get_transactions()
+            logger.info("Found transaction info for:\n* {} payables\n"
+                "* {} receivables\n* {} transfers\n* {} other".format(
+                    len(transactions['payables']), 
+                    len(transactions['receivables']), 
+                    len(transactions['transfers']), 
+                    len(transactions['other'])))
 
             logger.info("Fetching reimbursements from Google form...")
             reimbursements = [r for r in self.sheets.all_payables()
@@ -73,12 +77,11 @@ class Dispatch(object):
                 len(reimbursements), self.start_date.year))
             test = set(reimbursements)
 
-            logger.info("Resolving deltas...")
-            transactions = []
-            # reimbursements = []
-
             logger.info("Updating payables spreadsheet")
-            self.update_payables(transactions, reimbursements)
+            self.update_payables(transactions['payables'], reimbursements)
+
+            logger.info("Updating receivables spreadsheet")
+            self.update_receivables(transactions['receivables'])
 
             logger.info("Making changes persistent")
             self.excel.close()
@@ -155,13 +158,77 @@ class Dispatch(object):
         """Copies new payable entries into the workbook. Synchronizes with
         Google sheets, but preserves existing entries.
         """
+        # Add new payables to sheet
         sheet = self.excel.sheets['payables']
-        old_payables = set(sheet.read_entries())
+        old_entries = set(sheet.read_entries())
         reimbursements = set(reimbursements)
 
-        new_entries = reimbursements.difference(old_payables)
-
+        new_entries = reimbursements.difference(old_entries)
         sheet.add_entries(list(new_entries))
+        logger.info("Added {} payables to spreadsheet".format(
+            len(new_entries)))
+
         sheet.sort_by_time()
+
+        # Verify payables against Paypal transactions
+        transactions = dict((t.data['id'], t) for t in transactions)  
+        
+        # Remove all transactions already in spreadsheet
+        all_entries = sheet.read_entries()
+        id_range = [row[0] for row in sheet.get_range(
+            sheet.first_row, PAYABLE_PAYPAL_ID_COL, 
+            sheet.last_row, PAYABLE_PAYPAL_ID_COL)]
+
+        for eid in id_range:
+            if eid in transactions:
+                transactions.pop(eid)
+
+        logger.info("Found {} unmatched transactions".format(
+            len(transactions)))
+
+        # Check for matching payables and transactions
+        matches = []
+        for idx, (entry, eid) in enumerate(zip(all_entries, id_range)):
+            for tid, transaction in transactions.items():
+                if eid is None:
+                    if self.match_transaction_payable(entry, transaction):
+                        matches.append((idx, transaction))
+                        transactions.pop(tid)
+                        break   # Some messy stuff here
+
+        for idx, transaction in matches:
+            sheet.validate_payable(idx, transaction)
+
+
+    def update_receivables(self, transactions):
+        sheet = self.excel.sheets['receivables']
+
+        new_receivables = [t.to_receivable() for t in transactions]
+
+        old_receivables = dict((entry.data['transaction_id'], entry) for entry
+            in sheet.read_entries())
+
+        unadded = [e for e in new_receivables if e.data['transaction_id']
+            not in old_receivables]
+        
+        sheet.add_entries(unadded)
+
+
+    def match_transaction_payable(self, payable, transaction):
+        payable_email = payable.data['paypal']
+        transaction_email = transaction.data['email']
+
+        if payable_email and transaction_email:
+            if payable_email.lower() != transaction_email.lower():
+                return False
+
+        payable_amount = payable.data['amount']
+        transaction_amount = transaction.data['amount']
+
+        if payable_amount and transaction_amount:
+            if abs(payable_amount) != abs(transaction_amount):
+                return False
+
+        return True
 
 

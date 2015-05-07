@@ -90,7 +90,7 @@ class Receivable(Entry):
         Entry.__init__(self, **kwargs)
 
 
-class Transaction():
+class Transaction(Entry):
     """Creates a new Transaction object using an entry that starts at the
     status and ends at currency type.
     """
@@ -113,5 +113,35 @@ class Transaction():
             value = value.title()
 
         return value
+
+
+    def to_receivable(self):
+        values = {
+            'year': self.data['timestamp'].year, 
+            'committed_date': None, 
+            'timestamp': self.data['timestamp'], 
+            'support_type': None, 
+            'organization_type': None, 
+            'budget_line_item': None, 
+            'payee_name': self.data['name'], 
+            'payee_email': self.data['email'], 
+            'amount_requested': None, 
+            'amount_committed': None, 
+            'amount_gross': self.data['amount'], 
+            'amount_net': self.data['net_amount'], 
+            'transaction_id': self.data['id'],
+        }
+        return Receivable(**values)
+
+
+    def __eq__(self, other):
+        if not isinstance(other, Transaction):
+            return False
+
+        return self.data['id'] == other.data['id']
+
+
+    def __hash__(self):
+        return hash(self.data['id'])
 
 

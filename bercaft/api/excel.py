@@ -62,6 +62,10 @@ class ExcelSpreadsheet(object):
         range_end = self.cell(row_end, col_end)
         return self.sheet.Range(range_start, range_end)
 
+    def set_cell(self, row, col, value):
+        """Writes value to the cell at one-indexed (row, col)."""
+        self.sheet.Cells(row, col).Value = value
+
     def set_range(self, row, col, contents):
         """Writes a block of contents to the spreadsheet."""
         width, height = len(contents[0]), len(contents)
@@ -75,7 +79,9 @@ class Payables(ExcelSpreadsheet):
         self.first_row = PAYABLE_FIRST_ROW
         self.first_col = PAYABLE_FIRST_COL
         self.last_col = PAYABLE_LAST_COL
+        self.sort_col = PAYABLE_SORT_BY
         self.fields = PAYABLE_FIELDS
+
 
     def read_entries(self):
         entry_range = self.get_range(self.first_row, self.first_col+1, 
@@ -89,8 +95,6 @@ class Payables(ExcelSpreadsheet):
         return entries
 
     def add_entries(self, entries):
-        num_entries = len(entries)
-
         contents = []
         for idx, payable in enumerate(entries):
             billing_year = payable.data['event_date'].year
@@ -100,19 +104,28 @@ class Payables(ExcelSpreadsheet):
             contents.append(entry)
 
         if contents:
-            print(self.last_row+1, self.first_col)
             self.set_range(self.last_row+1, self.first_col, contents)
 
     def sort_by_time(self):
         """Sorts the payables sheet by time."""
         target = self.range(self.first_row, self.first_col, self.last_row, 
             self.last_col)
-        key = self.range(self.first_row, PAYABLE_SORT_BY, self.last_row, 
-            PAYABLE_SORT_BY)
+        key = self.range(self.first_row, self.sort_col, self.last_row, 
+            self.sort_col)
         target.Sort(
             Key1=key, 
             Order1=cc.xlAscending, 
             Orientation=cc.xlTopToBottom)
+
+    def validate_payable(self, idx, transaction):
+        transaction_values = ((
+            transaction.data['id'], 
+            transaction.data['timestamp'], 
+            transaction.data['timestamp']
+        ),)
+
+        self.set_range(self.first_row+idx, PAYABLE_PAYPAL_ID_COL, 
+            transaction_values)
 
 
 class Receivables(ExcelSpreadsheet):
@@ -121,19 +134,38 @@ class Receivables(ExcelSpreadsheet):
         self.first_row = RECEIVABLE_FIRST_ROW
         self.first_col = RECEIVABLE_FIRST_COL
         self.last_col = RECEIVABLE_LAST_COL
+        self.sort_col = RECEIVABLE_SORT_BY
+        self.fields = RECEIVABLE_FIELDS
+
         
     def read_entries(self):
-        pass
+        entry_range = self.get_range(self.first_row, self.first_col+1, 
+            self.last_row, self.last_col)
+        
+        entries = []
+        for row in entry_range:
+            entry = dict((field, row[idx]) for idx, field in enumerate(
+                self.fields))
+            entries.append(Receivable(**entry))
+        return entries
 
-    def write_entries(self, row, entries):
-        pass
+
+    def add_entries(self, entries):
+        contents = [list(entry) for entry in entries]
+
+        if contents:
+            self.set_range(self.last_row+1, self.first_col, contents)
+
 
     def sort_by_time(self):
         """Sorts the receivables sheet by time."""
-        target = self.range(self.first_row, 2, self.last_row, 20)
-        sort_target = self.range(self.first_row, 4, self.last_row, 4)
+        target = self.range(self.first_row, self.first_col, self.last_row, 
+            self.last_col)
+        key = self.range(self.first_row, self.sort_col, self.last_row, 
+            self.sort_col)
         target.Sort(
-            Key1=sort_target, 
+            Key1=key, 
             Order1=cc.xlAscending, 
             Orientation=cc.xlTopToBottom)
+
 
