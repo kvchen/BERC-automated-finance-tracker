@@ -99,6 +99,10 @@ class Dispatch(object):
     def backup(self, callback=None):
         try:
             logger.info("Creating backup...")
+
+            if not os.path.exists(os.path.join('workbook', 'backups')):
+                os.makedirs(os.path.join('workbook', 'backups'))
+
             self.create_backup()
             
             if callback:
