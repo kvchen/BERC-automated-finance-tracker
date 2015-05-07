@@ -139,7 +139,7 @@ class Receivables(ExcelSpreadsheet):
 
         
     def read_entries(self):
-        entry_range = self.get_range(self.first_row, self.first_col+1, 
+        entry_range = self.get_range(self.first_row, self.first_col, 
             self.last_row, self.last_col)
         
         entries = []

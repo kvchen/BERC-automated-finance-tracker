@@ -208,10 +208,13 @@ class Dispatch(object):
         old_receivables = dict((entry.data['transaction_id'], entry) for entry
             in sheet.read_entries())
 
-        unadded = [e for e in new_receivables if e.data['transaction_id']
-            not in old_receivables]
+        unadded = dict((e.data['transaction_id'], e) for e in new_receivables
+            if e.data['transaction_id'] not in old_receivables)
+
+        new_entries = sorted(unadded.values(), 
+            key=lambda e: e.data['timestamp'])
         
-        sheet.add_entries(unadded)
+        sheet.add_entries(new_entries)
 
 
     def match_transaction_payable(self, payable, transaction):

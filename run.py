@@ -15,13 +15,13 @@ __status__ = "Development"
 __version__ = "0.0.1"
 
 
-
 # Default modules
 from bercaft.dispatch import Dispatch
 from bercaft.gui import DispatchGUI
 
 import argparse
 import logging
+import os
 
 from logging.handlers import TimedRotatingFileHandler
 
@@ -42,6 +42,8 @@ def main():
     args = parser.parse_args()
 
     # Log to (up to) three places - GUI, logfile, and console output
+    if not os.path.exists('logs'):
+        os.makedirs('logs')
 
     # Uncomment this line to log output to terminal
     logging.basicConfig(format=LOG_FORMAT)
